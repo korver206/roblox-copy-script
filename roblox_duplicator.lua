@@ -127,7 +127,7 @@ end
 local sg=Instance.new("ScreenGui",p.PlayerGui)
 sg.Enabled=false
 local f=Instance.new("Frame",sg)
-f.Size=UDim2.new(0,400,0,400)
+f.Size=UDim2.new(0,400,0,450)
 f.Position=UDim2.new(0.5,-200,0.5,-200)
 f.BackgroundColor3=Color3.new(0.2,0.2,0.2)
 local t=Instance.new("TextLabel",f)
@@ -227,10 +227,27 @@ copyb.MouseButton1Click:Connect(function()
         print("Already duplicating, please wait.")
     end
 end)
+
+local clipb=Instance.new("TextButton",f)
+clipb.Text="Copy to Clipboard"
+clipb.Size=UDim2.new(1,0,0,30)
+clipb.Position=UDim2.new(0,0,0,360)
+clipb.BackgroundColor3=Color3.new(0.2,0.5,0.8)
+clipb.TextColor3=Color3.new(1,1,1)
+clipb.Font=Enum.Font.SourceSansBold
+clipb.MouseButton1Click:Connect(function()
+    if outputBox.Text ~= "Generated code will appear here. Copy and paste into a Roblox Studio script." then
+        setclipboard(outputBox.Text)
+        print("Code copied to clipboard!")
+    else
+        print("No code generated yet. Click 'Copy Game Structure' first.")
+    end
+end)
+
 local cb=Instance.new("TextButton",f)
 cb.Text="Close"
 cb.Size=UDim2.new(1,0,0,30)
-cb.Position=UDim2.new(0,0,0,360)
+cb.Position=UDim2.new(0,0,0,390)
 cb.BackgroundColor3=Color3.new(0.6,0.6,0.6)
 cb.MouseButton1Click:Connect(function()sg.Enabled=false end)
 game:GetService("UserInputService").InputBegan:Connect(function(input)
