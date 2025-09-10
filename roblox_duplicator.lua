@@ -23,10 +23,10 @@ local function serializeInstance(obj)
         local success, color = pcall(function() return obj.Color end)
         if success then data.Properties.Color = {color.R, color.G, color.B} end
         
-        local success, mat = pcall(function() return obj.Material end)
+        local success, mat = pcall(function() return obj.Material.Name end)
         if success then data.Properties.Material = mat end
         
-        local success, shape = pcall(function() return obj.Shape end)
+        local success, shape = pcall(function() return obj.Shape.Name end)
         if success and shape then data.Properties.Shape = shape end
         
         local success, anchored = pcall(function() return obj.Anchored end)
@@ -61,9 +61,11 @@ local function serializeWorkspace()
 end
 
 local function generatePropertyCode(varName, prop, val)
-    if type(val) == "userdata" then
+    if type(val) == "string" and (prop == "Material" or prop == "Shape") then
+        return varName .. "." .. prop .. " = Enum." .. prop .. "." .. val
+    elseif type(val) == "userdata" then
         if val.Name and val.EnumType then
-            return varName .. "." .. prop .. " = Enum." .. val.EnumType .. "." .. val.Name
+            return varName .. "." .. prop .. " = Enum." .. val.EnumType.Name .. "." .. val.Name
         end
     elseif type(val) == "number" then
         return varName .. "." .. prop .. " = " .. val
