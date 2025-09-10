@@ -2,17 +2,7 @@ local p = game.Players.LocalPlayer
 local duplicating = false
 
 
-local function serializeInstance(obj)
-    if not obj then return nil end
-    
-    local data = {
-        ClassName = obj.ClassName,
-        Name = obj.Name,
-        Properties = {},
-        Children = {}
-    }
-    
-    -- Capture common properties based on ClassName
+local function captureProperties(obj, data)
     if obj:IsA("BasePart") then
         local success, pos = pcall(function() return obj.Position end)
         if success then data.Properties.Position = {pos.X, pos.Y, pos.Z} end
@@ -44,21 +34,43 @@ local function serializeInstance(obj)
         local success, source = pcall(function() return obj.Source end)
         if success then data.Properties.Source = source end
     end
-    
-    -- Recurse children
-    for _, child in ipairs(obj:GetChildren()) do
-        local childData = serializeInstance(child)
-        if childData then
-            table.insert(data.Children, childData)
-        end
-    end
-    
-    return data
 end
 
 local function serializeWorkspace()
-    return serializeInstance(workspace)
+    local rootData = {
+        ClassName = workspace.ClassName,
+        Name = workspace.Name,
+        Properties = {},
+        Children = {}
+    }
+    captureProperties(workspace, rootData)
+    
+    local stack = {workspace}
+    local childMap = {[workspace] = rootData.Children}
+    local processedCount = 0
+    while #stack > 0 do
+        local obj = table.remove(stack)
+        processedCount = processedCount + 1
+        if processedCount % 100 == 0 then
+            print("Processed " .. processedCount .. " instances...")
+        end
+        for _, child in ipairs(obj:GetChildren()) do
+            local childData = {
+                ClassName = child.ClassName,
+                Name = child.Name,
+                Properties = {},
+                Children = {}
+            }
+            captureProperties(child, childData)
+            table.insert(childMap[obj], childData)
+            table.insert(stack, child)
+            childMap[child] = childData.Children
+        end
+    end
+    print("Serialization complete. Processed " .. processedCount .. " instances.")
+    return rootData
 end
+
 
 local function generatePropertyCode(varName, prop, val)
     if type(val) == "string" and (prop == "Material" or prop == "Shape") then
@@ -126,6 +138,15 @@ local t=Instance.new("TextLabel",f)
 t.Text="Roblox Game Copier"
 t.Size=UDim2.new(1,0,0,30)
 t.BackgroundColor3=Color3.new(0.3,0.3,0.3)
+
+local statusLabel = Instance.new("TextLabel", f)
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, 0, 0, 20)
+statusLabel.Position = UDim2.new(0, 0, 0, 30)
+statusLabel.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+statusLabel.TextColor3 = Color3.new(1, 1, 1)
+statusLabel.Text = "Ready"
+statusLabel.TextWrapped = true
 local outputBox=Instance.new("TextBox",f)
 outputBox.Name="OutputBox"
 outputBox.Size=UDim2.new(1,0,0,150)
@@ -151,17 +172,27 @@ copyb.TextColor3=Color3.new(1,1,1)
 copyb.Font=Enum.Font.SourceSansBold
 copyb.MouseButton1Click:Connect(function()
     if not duplicating then
-        duplicating=true
+        duplicating = true
+        statusLabel.Text = "Starting serialization..."
         print("Starting game structure copy...")
-        local success, code = pcall(getFullCode)
-        if success then
-            outputBox.Text = code
-            print("Game structure code generated successfully!")
-        else
-            outputBox.Text = "-- Error generating code: " .. tostring(code)
-            print("Error in generation: " .. tostring(code))
-        end
-        duplicating=false
+        print("Spawn started")
+        spawn(function()
+            print("Inside spawn")
+            local success, code = pcall(function()
+                print("Inside pcall getFullCode")
+                return getFullCode()
+            end)
+            if success then
+                outputBox.Text = code
+                statusLabel.Text = "Generation complete!"
+                print("Game structure code generated successfully!")
+            else
+                outputBox.Text = "-- Error generating code: " .. tostring(code)
+                statusLabel.Text = "Error: " .. tostring(code)
+                print("Error in generation: " .. tostring(code))
+            end
+            duplicating = false
+        end)
     else
         print("Already duplicating, please wait.")
     end
