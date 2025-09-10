@@ -41,18 +41,35 @@ local function serializeInstance(obj)
     
     -- Capture common properties based on ClassName
     if obj:IsA("BasePart") then
-        data.Properties.Position = {obj.Position.X, obj.Position.Y, obj.Position.Z}
-        data.Properties.Size = {obj.Size.X, obj.Size.Y, obj.Size.Z}
-        data.Properties.Color = {obj.Color.R, obj.Color.G, obj.Color.B}
-        data.Properties.Material = obj.Material
-        data.Properties.Shape = obj.Shape
-        data.Properties.Anchored = obj.Anchored
-        data.Properties.CanCollide = obj.CanCollide
-        data.Properties.Transparency = obj.Transparency
+        local success, pos = pcall(function() return obj.Position end)
+        if success then data.Properties.Position = {pos.X, pos.Y, pos.Z} end
+        
+        local success, size = pcall(function() return obj.Size end)
+        if success then data.Properties.Size = {size.X, size.Y, size.Z} end
+        
+        local success, color = pcall(function() return obj.Color end)
+        if success then data.Properties.Color = {color.R, color.G, color.B} end
+        
+        local success, mat = pcall(function() return obj.Material end)
+        if success then data.Properties.Material = mat end
+        
+        local success, shape = pcall(function() return obj.Shape end)
+        if success and shape then data.Properties.Shape = shape end
+        
+        local success, anchored = pcall(function() return obj.Anchored end)
+        if success then data.Properties.Anchored = anchored end
+        
+        local success, cancollide = pcall(function() return obj.CanCollide end)
+        if success then data.Properties.CanCollide = cancollide end
+        
+        local success, trans = pcall(function() return obj.Transparency end)
+        if success then data.Properties.Transparency = trans end
     elseif obj:IsA("Model") then
-        data.Properties.PrimaryPart = obj.PrimaryPart and obj.PrimaryPart.Name or nil
+        local success, primary = pcall(function() return obj.PrimaryPart end)
+        if success and primary then data.Properties.PrimaryPart = primary.Name else data.Properties.PrimaryPart = nil end
     elseif obj:IsA("Script") or obj:IsA("LocalScript") then
-        data.Properties.Source = obj.Source  -- Note: May not work due to security, but for executor
+        local success, source = pcall(function() return obj.Source end)
+        if success then data.Properties.Source = source end
     end
     
     -- Recurse children
